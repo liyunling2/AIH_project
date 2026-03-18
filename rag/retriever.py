@@ -1,56 +1,71 @@
-# rag/retriever.py  —  Vertex AI Agent Engine version
-import os
-import vertexai
-from vertexai import agent_engines
-from dotenv import load_dotenv
+# rag/retriever.py  —  FINAL VERSION
+import uuid
+import streamlit as st
+from google.oauth2 import service_account
+from google.cloud.dialogflowcx_v3 import (
+    SessionsClient,
+    QueryInput,
+    TextInput,
+    DetectIntentRequest,
+)
 
-load_dotenv()
+# Read config from Streamlit secrets
+PROJECT_ID = st.secrets["GOOGLE_CLOUD_PROJECT"]
+LOCATION   = st.secrets.get("GOOGLE_LOCATION", "us-central1")
+AGENT_ID   = st.secrets["AGENT_ENGINE_ID"]
 
-PROJECT_ID      = os.environ["GOOGLE_CLOUD_PROJECT"]  
-LOCATION        = os.environ.get("GOOGLE_LOCATION", "us-central1")
-AGENT_ENGINE_ID = os.environ["AGENT_ENGINE_ID"]        # the number from the URL
+# Build credentials from the service account in Streamlit secrets
+creds = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=["https://www.googleapis.com/auth/cloud-platform"],
+)
 
-# Initialise the Vertex AI client once at import time
-vertexai.init(project=PROJECT_ID, location=LOCATION)
-
-# Reference to your deployed agent (no code deployment needed — it's already live)
-_agent = agent_engines.get(AGENT_ENGINE_ID)
+# Dialogflow CX client pointing at your agent's region
+_client = SessionsClient(
+    credentials=creds,
+    client_options={"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"},
+)
 
 
 def get_rag_response(query: str, profile: dict, history: list[dict]) -> str:
-    """
-    Send a message to the deployed Vertex AI agent and return its reply.
-    Profile data from the onboarding form is prepended to the query so the
-    agent knows who it's talking to.
-    """
+    # Consistent session ID per user so the agent remembers context
+    session_id = str(uuid.uuid5(
+        uuid.NAMESPACE_DNS,
+        profile["name"].lower().replace(" ", "-")
+    ))
 
-    # Inject profile context into the message — the agent sees this as part
-    # of the user's question, so it personalises the response accordingly
-    personalised_query = f"""[User context: name={profile['name']}, 
-    role={profile['role']}, language={profile['language']}, 
-    topic={profile['topic']}]
+    session_path = _client.session_path(
+        project=PROJECT_ID,
+        location=LOCATION,
+        agent=AGENT_ID,
+        session=session_id,
+    )
 
-    {query}
+    # Inject form profile into the message
+    personalised_message = (
+        f"[Context: name={profile['name']}, role={profile['role']}, "
+        f"language={profile['language']}, ageGroup={profile['ageGroup']}]\n\n"
+        f"{query}\n\n"
+        f"Please respond in {profile['language']}."
+    )
 
-    Please respond in {profile['language']}."""
-
-    # Create or reuse a session keyed to this user's name (keeps history)
-    session_id = f"session-{profile['name'].lower().replace(' ', '-')}"
+    request = DetectIntentRequest(
+        session=session_path,
+        query_input=QueryInput(
+            text=TextInput(text=personalised_message),
+            language_code="en",
+        ),
+    )
 
     try:
-        stream = _agent.stream_query(
-        message=personalised_query,
-        session_id=session_id,
-        )
+        response = _client.detect_intent(request=request)
 
-        full_response = ""
-        for event in stream:
-            parts = event.get("content", {}).get("parts", [])
-            for part in parts:
-                if "text" in part:
-                    full_response += part["text"]
+        reply_parts = []
+        for message in response.query_result.response_messages:
+            if message.text.text:
+                reply_parts.extend(message.text.text)
 
-        return full_response.strip() if full_response else "I could not find an answer in the documents."
+        return "\n".join(reply_parts) if reply_parts else "I could not find an answer."
 
     except Exception as e:
         return f"Error calling agent: {str(e)}"
