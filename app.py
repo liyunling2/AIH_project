@@ -27,7 +27,7 @@ st.markdown("""
 
     /* Chat message bubbles */
     .msg-user {
-        background: #4f46e5;
+        background: #4169E1;
         color: white;
         padding: 10px 10px;
         border-radius: 16px 16px 4px 16px;
@@ -70,12 +70,12 @@ st.markdown("""
 
     /* Primary button override */
     .stButton > button {
-        background: #6495ED !important;
+        background: #A7C7E7 !important;
         color: white !important;
         border: none !important;
         border-radius: 10px !important;
         font-size: 14px !important;
-        padding: 0.3rem 0.8rem !important;
+        padding: 5px 14px !important;
         font-weight: 500 !important;
     }
     .stButton > button:hover {
@@ -135,10 +135,17 @@ def show_form():
             "Age Group",
             options=["18-25", "26-39", "40-50", "50+"],
         )
-        role = st.selectbox(
-            "Your role",
-            options=["Searching for Rental", "Currently Renting", "Landlord/Tenant"],
-        )
+        col3, col4 = st.columns(2)
+        with col3:
+            role = st.selectbox(
+                "Your Role",
+                options=["Searching for Rental", "Currently Renting", "Landlord/Tenant"],
+            )
+        with col4:
+            rentalType = st.selectbox(
+                "Rental Type",
+                options=["HDB Flats", "Condominums", "Landed Properties"],
+            )
 
         language = st.selectbox(
             "Preferred language",
@@ -156,6 +163,7 @@ def show_form():
                     "name":     name.strip(),
                     "ageGroup":     ageGroup,
                     "role":     role,
+                    "rentalType":     rentalType,
                     "language": language
                 }
                 st.session_state.form_done = True
@@ -185,7 +193,7 @@ def show_chat():
     with col_left:
         st.markdown(f"""
             <div class='profile-pill'>
-                👤 {profile['name']} · {profile['role']} · {profile['ageGroup']} · {profile['language']}
+                👤 {profile['name']} · {profile['role']} · {profile['ageGroup']} · {profile['rentalType']} · {profile['language']}
             </div>
         """, unsafe_allow_html=True)
     with col_right:
