@@ -14,8 +14,6 @@ st.markdown("""
     /* Hide Streamlit default header chrome */
     #MainMenu, footer, header { visibility: hidden; }
 
-    /* Page background */
-    .stApp { background-color: #f5f4ef; }
 
     /* Form card */
     .form-card {
@@ -31,7 +29,7 @@ st.markdown("""
     .msg-user {
         background: #4f46e5;
         color: white;
-        padding: 12px 16px;
+        padding: 10px 10px;
         border-radius: 16px 16px 4px 16px;
         margin: 6px 0 6px auto;
         max-width: 75%;
@@ -43,7 +41,7 @@ st.markdown("""
     .msg-bot {
         background: white;
         color: #1a1a1a;
-        padding: 12px 16px;
+        padding: 10px 10px;
         border-radius: 16px 16px 16px 4px;
         border: 1px solid #e8e7e2;
         margin: 6px auto 6px 0;
@@ -65,33 +63,25 @@ st.markdown("""
         border: 1px solid #afa9ec;
         border-radius: 20px;
         padding: 5px 14px;
-        font-size: 13px;
+        font-size: 14px;
         color: #3c3489;
         font-weight: 500;
     }
 
     /* Primary button override */
     .stButton > button {
-        background: #4f46e5 !important;
+        background: #6495ED !important;
         color: white !important;
         border: none !important;
         border-radius: 10px !important;
-        font-size: 15px !important;
-        padding: 0.6rem 1.4rem !important;
+        font-size: 14px !important;
+        padding: 0.3rem 0.8rem !important;
         font-weight: 500 !important;
     }
     .stButton > button:hover {
-        background: #4338ca !important;
+        background: #0047AB !important;
     }
-
-    /* Input fields */
-    .stTextInput input, .stSelectbox select {
-        border-radius: 8px !important;
-        border: 1px solid #ddd !important;
-    }
-
-    /* Divider */
-    hr { border-color: #e8e7e2 !important; }
+            
 </style>
 """, unsafe_allow_html=True)
 
@@ -120,10 +110,10 @@ def show_form():
     st.markdown("""
         <div style='text-align:center; margin-bottom: 8px;'>
             <span style='font-size:36px;'>💬</span>
-            <h2 style='margin:8px 0 4px; font-weight:600; color:#1a1a1a;'>
+            <h2 style='margin:8px 0 4px; font-weight:600;'>
                 Before we start
             </h2>
-            <p style='color:#666; font-size:15px; margin:0;'>
+            <p style=' font-size:15px; margin:0;'>
                 Answer a few quick questions so the assistant can help you better.
             </p>
         </div>
@@ -178,6 +168,17 @@ def show_form():
 # ══════════════════════════════════════════════════════════════════════════════
 def show_chat():
     profile = st.session_state.profile
+    title_row = st.container(
+        horizontal=True,
+        vertical_alignment="bottom",
+    )
+
+    with title_row:
+        st.title(
+            "Singapore Rental Assistant",
+            anchor=False,
+            width="stretch",
+        )
 
     # ── Header ────────────────────────────────────────────────────────────────
     col_left, col_right = st.columns([3, 1])
@@ -188,12 +189,11 @@ def show_chat():
             </div>
         """, unsafe_allow_html=True)
     with col_right:
-        if st.button("← New session"):
+        if st.button("← New session",use_container_width=True):
             st.session_state.form_done = False
             st.session_state.messages = []
             st.session_state.profile = {}
             st.rerun()
-
     st.divider()
 
     # ── Message history ───────────────────────────────────────────────────────
