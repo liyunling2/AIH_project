@@ -43,7 +43,7 @@ def get_rag_response(query: str, profile: dict, history: list[dict]) -> str:
 
     # Inject form profile into the message
     personalised_message = (
-        f"[Context: name={profile['name']}, role={profile['role']}, rentalType={profile['rentalType']},"
+        f"[Context: name={profile['name']}, rental_stage={profile['rental_stage']}, user_role={profile['user_role']}, property_type={profile['property_type']},"
         f"language={profile['language']}, ageGroup={profile['ageGroup']}]\n\n"
         f"{query}\n\n"
         f"Please respond in {profile['language']}."

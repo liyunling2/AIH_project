@@ -137,20 +137,27 @@ def show_form():
         )
         col3, col4 = st.columns(2)
         with col3:
-            role = st.selectbox(
+            user_role = st.selectbox(
                 "Your Role",
-                options=["Searching for Rental", "Currently Renting", "Landlord/Tenant"],
+                options=["Landlord", "Tenant"],
             )
         with col4:
-            rentalType = st.selectbox(
-                "Rental Type",
-                options=["HDB Flats", "Condominums", "Landed Properties"],
+            rental_stage= st.selectbox(
+                "Your Rental Stage",
+                options=["Yet to Sign", "Signed"],
             )
-
-        language = st.selectbox(
+        col5, col6 = st.columns(2)
+        with col5:
+            property_type = st.selectbox(
+                "Property Type",
+                options=["HDB Flats", "Private"],
+            )
+        with col6:
+            language = st.selectbox(
             "Preferred language",
             options=["English", "Mandarin", "Malay", "Tamil", "French", "Spanish"],
         )
+        st.file_uploader("Contract Upload")
 
         st.markdown("<br>", unsafe_allow_html=True)
         submitted = st.form_submit_button("Start chatting →", use_container_width=True)
@@ -162,8 +169,9 @@ def show_form():
                 st.session_state.profile = {
                     "name":     name.strip(),
                     "ageGroup":     ageGroup,
-                    "role":     role,
-                    "rentalType":     rentalType,
+                    "user_role":     user_role,
+                    "rental_stage":     rental_stage,
+                    "property_type":     property_type,
                     "language": language
                 }
                 st.session_state.form_done = True
@@ -193,7 +201,7 @@ def show_chat():
     with col_left:
         st.markdown(f"""
             <div class='profile-pill'>
-                👤 {profile['name']} · {profile['role']} · {profile['ageGroup']} · {profile['rentalType']} · {profile['language']}
+                👤 {profile['name']} · {profile['user_role']} · {profile['ageGroup']} · {profile['property_type']} · {profile['language']}
             </div>
         """, unsafe_allow_html=True)
     with col_right:
