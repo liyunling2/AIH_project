@@ -1,4 +1,3 @@
-# rag/retriever.py  —  FINAL VERSION
 import uuid
 import streamlit as st
 from google.oauth2 import service_account

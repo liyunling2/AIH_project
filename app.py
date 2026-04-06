@@ -184,6 +184,7 @@ def show_form():
 # ══════════════════════════════════════════════════════════════════════════════
 def show_chat():
     profile = st.session_state.profile
+
     title_row = st.container(
         horizontal=True,
         vertical_alignment="bottom",
@@ -199,73 +200,64 @@ def show_chat():
     # ── Header ────────────────────────────────────────────────────────────────
     col_left, col_right = st.columns([3, 1])
     with col_left:
-        st.markdown(f"""
+        st.markdown(
+            f"""
             <div class='profile-pill'>
                 👤 {profile['name']} · {profile['user_role']} · {profile['ageGroup']} · {profile['property_type']} · {profile['language']}
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
+
     with col_right:
-        if st.button("← New session",use_container_width=True):
+        if st.button("← New session", use_container_width=True):
             st.session_state.form_done = False
             st.session_state.messages = []
             st.session_state.profile = {}
             st.rerun()
+
     st.divider()
+
+    # ── Welcome message on first load ────────────────────────────────────────
+    if not st.session_state.messages:
+        with st.chat_message("assistant"):
+            st.markdown(
+                f"""
+                Hi {profile['name']}! I'm ready to help you with your rental enquiries.
+
+                I'll answer in **{profile['language']}** based on the documents in my knowledge base.
+
+                What would you like to know?
+                """
+            )
 
     # ── Message history ───────────────────────────────────────────────────────
     for msg in st.session_state.messages:
-        if msg["role"] == "user":
-            st.markdown(f"""
-                <div class='msg-wrapper-user'>
-                    <div class='msg-user'>{msg['content']}</div>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-                <div class='msg-wrapper-bot'>
-                    <div class='msg-bot'>{msg['content']}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-    # Welcome message on first load
-    if not st.session_state.messages:
-        st.markdown(f"""
-            <div class='msg-wrapper-bot'>
-                <div class='msg-bot'>
-                    Hi {profile['name']}! I'm ready to help you with your rental enquiries.
-                    I'll answer in <strong>{profile['language']}</strong> based on the documents in my knowledge base.
-                    What would you like to know?
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
     # ── Input ─────────────────────────────────────────────────────────────────
-    with st.form("chat_form", clear_on_submit=True):
-        col_input, col_btn = st.columns([5, 1])
-        with col_input:
-            user_input = st.text_input(
-                "message",
-                placeholder="Ask a question...",
-                label_visibility="collapsed",
-            )
-        with col_btn:
-            send = st.form_submit_button("Send", use_container_width=True)
+    user_input = st.chat_input("Ask a question...")
 
-    if send and user_input.strip():
+    if user_input and user_input.strip():
         user_msg = user_input.strip()
         st.session_state.messages.append({"role": "user", "content": user_msg})
 
-        with st.spinner("Thinking..."):
-            try:
-                reply = get_rag_response(
-                    query=user_msg,
-                    profile=profile,
-                    history=st.session_state.messages[:-1],  # exclude the just-added message
-                )
-            except Exception as e:
-                reply = f"Sorry, something went wrong: {str(e)}"
+        with st.chat_message("user"):
+            st.markdown(user_msg)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                try:
+                    reply = get_rag_response(
+                        query=user_msg,
+                        profile=profile,
+                        history=st.session_state.messages[:-1],  # exclude the just-added message
+                    )
+                except Exception as e:
+                    reply = f"Sorry, something went wrong: {str(e)}"
+
+            st.markdown(reply)
 
         st.session_state.messages.append({"role": "assistant", "content": reply})
         st.rerun()
